@@ -1,0 +1,127 @@
+---
+import 'katex/dist/katex.min.css';
+---
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Schrijven | Mechanics of Nature</title>
+    <style is:global>
+      :root { --bg:#fbfaf7; --tekst:#1c1c1e; --lijn:#e6e3dc; --accent:#2f5fd0; --kaart:#fff; }
+      @media (prefers-color-scheme: dark) {
+        :root { --bg:#0f1117; --tekst:#ececf1; --lijn:#272b38; --accent:#7aa2ff; --kaart:#171a23; }
+      }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--tekst); font-family:system-ui,sans-serif; }
+      header { display:flex; gap:.6rem; align-items:center; padding:.7rem 1rem; border-bottom:1px solid var(--lijn); }
+      header strong { margin-right:auto; }
+      button { background:var(--kaart); color:var(--tekst); border:1px solid var(--lijn);
+               border-radius:8px; padding:.4rem .8rem; cursor:pointer; font-size:.9rem; }
+      button:hover { border-color:var(--accent); }
+      #wrap { display:grid; grid-template-columns:1fr 1fr; height:calc(100vh - 3.4rem); }
+      #inv { width:100%; height:100%; border:0; border-right:1px solid var(--lijn); padding:1rem;
+             resize:none; background:var(--bg); color:var(--tekst);
+             font:15px/1.6 Consolas,"Courier New",monospace; outline:none; }
+      #uit { padding:1rem 1.5rem; overflow:auto; font-family:Georgia,serif; font-size:1.05rem; line-height:1.7; }
+      #uit h1,#uit h2,#uit h3 { line-height:1.25; }
+      #uit blockquote { margin:1rem 0; padding:.1rem 1rem; border-left:4px solid var(--accent); background:var(--kaart); }
+      .katex-display { overflow-x:auto; overflow-y:hidden; }
+      @media (max-width:800px) { #wrap { grid-template-columns:1fr; grid-template-rows:1fr 1fr; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Schrijven</strong>
+      <span id="status" style="font-size:.85rem;opacity:.7"></span>
+      <button class="blok" data-blok="definitie">Definitie</button>
+     <button class="blok" data-blok="stelling">Stelling</button>
+     <button class="blok" data-blok="bewijs">Bewijs</button>
+     <button class="blok" data-blok="voorbeeld">Voorbeeld</button>
+     <button class="blok" data-blok="opmerking">Opmerking</button>
+      <button id="open">Open .md</button>
+      <button id="opslaan">Download .md</button>
+      <input id="bestand" type="file" accept=".md,.txt" hidden />
+    </header>
+    <div id="wrap">
+      <textarea id="inv" spellcheck="false"></textarea>
+      <div id="uit"></div>
+    </div>
+
+    <script>
+      import katex from 'katex';
+      import { marked } from 'marked';
+
+      const inv = document.getElementById('inv') as HTMLTextAreaElement;
+      const uit = document.getElementById('uit') as HTMLElement;
+      const status = document.getElementById('status') as HTMLElement;
+
+      const voorbeeld = `---
+titel: "Mijn eerste pagina"
+deel: "Complexe analyse"
+volgorde: 1
+vereist: []
+---
+
+## Stelling
+
+Voor holomorfe $f$ geldt
+
+$$
+f(a)=\\frac{1}{2\\pi i}\\oint_\\gamma \\frac{f(z)}{z-a}\\,dz
+$$
+`;
+
+      function render(bron: string) {
+        // het kopblok tussen --- verbergen in de preview
+        bron = bron.replace(/^---\n[\s\S]*?\n---\n/, '');
+        const opslag: string[] = [];
+        const bewaar = (html: string) => { opslag.push(html); return `@@M${opslag.length - 1}@@`; };
+        let t = bron.replace(/\$\$([\s\S]+?)\$\$/g, (_, f) =>
+          bewaar(katex.renderToString(f.trim(), { displayMode: true, throwOnError: false })));
+        t = t.replace(/\$([^$\n]+?)\$/g, (_, f) =>
+          bewaar(katex.renderToString(f, { throwOnError: false })));
+        const html = marked.parse(t) as string;
+        return html.replace(/@@M(\d+)@@/g, (_, i) => opslag[Number(i)]);
+      }
+
+      function ververs() {
+        uit.innerHTML = render(inv.value);
+        try { localStorage.setItem('concept', inv.value); status.textContent = 'Automatisch bewaard in je browser'; }
+        catch { status.textContent = ''; }
+      }
+const blokken: Record<string, string> = {
+  definitie: "\n> **Definitie.** \n\n",
+  stelling: "\n> **Stelling.** \n\n",
+  bewijs: "\n**Bewijs.** \n\n$\\blacksquare$\n",
+  voorbeeld: "\n**Voorbeeld.** \n\n",
+  opmerking: "\n*Opmerking.* \n\n",
+};
+
+document.querySelectorAll('.blok').forEach((knop) => {
+  knop.addEventListener('click', () => {
+    const tekst = blokken[(knop as HTMLElement).dataset.blok!];
+    inv.setRangeText(tekst, inv.selectionStart, inv.selectionEnd, 'end');
+    inv.focus();
+    ververs();
+  });
+});
+      inv.value = localStorage.getItem('concept') ?? voorbeeld;
+      inv.addEventListener('input', ververs);
+      ververs();
+
+      document.getElementById('opslaan')!.addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([inv.value], { type: 'text/markdown' }));
+        a.download = 'pagina.md';
+        a.click();
+      });
+
+      const bestand = document.getElementById('bestand') as HTMLInputElement;
+      document.getElementById('open')!.addEventListener('click', () => bestand.click());
+      bestand.addEventListener('change', async () => {
+        const f = bestand.files?.[0];
+        if (f) { inv.value = await f.text(); ververs(); }
+      });
+    </script>
+  </body>
+</html>
