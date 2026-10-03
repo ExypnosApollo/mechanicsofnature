@@ -1,4 +1,5 @@
-# Astro Starter Kit: Minimal
+<<<<<<< HEAD
+# mechanicsofnature
 
 ```sh
 npm create astro@latest -- --template minimal
