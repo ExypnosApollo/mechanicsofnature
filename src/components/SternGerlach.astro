@@ -1,0 +1,23 @@
+<div class="sim">
+  <label>Hoek θ tussen de magneten: <output id="th">90</output>°
+    <input id="theta" type="range" min="0" max="180" value="90" />
+  </label>
+  <p><button id="go">Stuur 1000 atomen</button></p>
+  <p id="uit"></p>
+</div>
+
+<script>
+  const theta = document.getElementById('theta');
+  const th = document.getElementById('th');
+  const uit = document.getElementById('uit');
+
+  theta.addEventListener('input', () => { th.textContent = theta.value; });
+
+  document.getElementById('go').addEventListener('click', () => {
+    const t = (Number(theta.value) * Math.PI) / 180;
+    const p = Math.cos(t / 2) ** 2;
+    let omhoog = 0;
+    for (let i = 0; i < 1000; i++) if (Math.random() < p) omhoog++;
+    uit.textContent = `Omhoog: ${omhoog}, omlaag: ${1000 - omhoog} (theorie: ${(p * 1000).toFixed(0)} omhoog)`;
+  });
+</script>

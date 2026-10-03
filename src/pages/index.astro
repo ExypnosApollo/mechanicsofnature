@@ -1,0 +1,25 @@
+---
+import { getCollection } from 'astro:content';
+import Basis from '../layouts/Basis.astro';
+
+const paginas = (await getCollection('boek')).sort((a, b) => a.data.volgorde - b.data.volgorde);
+const delen = [...new Set(paginas.map((p) => p.data.deel))];
+---
+<Basis titel="Natuurkunde en wiskunde zonder versimpeling">
+  <p class="label">Een open boek</p>
+  <h1>Mechanics of Nature</h1>
+  <p style="font-size:1.25rem;color:var(--zacht)">
+    Wiskunde en natuurkunde met volledige afleidingen, voor wie het echt wil begrijpen.
+  </p>
+
+  {delen.map((deel) => (
+    <>
+      <h2>{deel}</h2>
+      {paginas.filter((p) => p.data.deel === deel).map((p) => (
+        <a href={`/boek/${p.id}/`} style="display:block;text-decoration:none;color:inherit;background:var(--kaart);border:1px solid var(--lijn);border-radius:12px;padding:1rem 1.25rem;margin-bottom:.7rem">
+          <strong>{p.data.titel}</strong>
+        </a>
+      ))}
+    </>
+  ))}
+</Basis>

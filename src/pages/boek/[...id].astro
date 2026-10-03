@@ -1,0 +1,26 @@
+---
+import { getCollection, render } from 'astro:content';
+import Basis from '../../layouts/Basis.astro';
+
+export async function getStaticPaths() {
+  const paginas = await getCollection('boek');
+  return paginas.map((p) => ({ params: { id: p.id }, props: { pagina: p } }));
+}
+
+const { pagina } = Astro.props;
+const { Content } = await render(pagina);
+const bewerkLink = `https://github.com/JOUWALIAS/mechanicsofnature/edit/main/src/content/boek/${pagina.id}.md`;
+---
+<Basis titel={pagina.data.titel}>
+  <p class="label">{pagina.data.deel}</p>
+  <h1>{pagina.data.titel}</h1>
+  {pagina.data.vereist.length > 0 && (
+    <p style="font-family:system-ui,sans-serif;font-size:.9rem;color:var(--zacht)">
+      Vereist: {pagina.data.vereist.join(', ')}
+    </p>
+  )}
+  <article class="tekst"><Content /></article>
+  <p style="font-family:system-ui,sans-serif;font-size:.9rem">
+    <a href={bewerkLink}>Verbeter deze pagina op GitHub</a>
+  </p>
+</Basis>
